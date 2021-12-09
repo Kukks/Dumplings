@@ -18,10 +18,11 @@ namespace Dumplings.Cli
             Logger.InitializeDefaults();
 
             Logger.LogInfo("Parsing arguments...");
-            ParseArgs(args, out Command command, out NetworkCredential rpcCred);
+            ParseArgs(args, out Command command, out NetworkCredential rpcCred, out var server);
 
             var rpcConf = new RPCCredentialString
             {
+                Server = server,
                 UserPassword = rpcCred
             };
             var client = new RPCClient(rpcConf, Network.Main);
@@ -124,14 +125,17 @@ namespace Dumplings.Cli
         }
 
 
-        private static void ParseArgs(string[] args, out Command command, out NetworkCredential cred)
+        private static void ParseArgs(string[] args, out Command command, out NetworkCredential cred,
+            out string server)
         {
-            string rpcUser = null;
-            string rpcPassword = null;
-            command = (Command)Enum.Parse(typeof(Command), args[0], ignoreCase: true);
+            string rpcUser = Environment.GetEnvironmentVariable("RPCUSER");
+            string rpcPassword = Environment.GetEnvironmentVariable("RPCPASSWORD");
+            server = Environment.GetEnvironmentVariable("RPCSERVER");
+            command = (Command)Enum.Parse(typeof(Command), Environment.GetEnvironmentVariable("COMMAND")??args[0], ignoreCase: true);
 
             var rpcUserArg = "--rpcuser=";
             var rpcPasswordArg = "--rpcpassword=";
+            var rpcServerArg = "--rpcserver=";
             foreach (var arg in args)
             {
                 var idx = arg.IndexOf(rpcUserArg, StringComparison.Ordinal);
@@ -144,6 +148,12 @@ namespace Dumplings.Cli
                 if (idx == 0)
                 {
                     rpcPassword = arg.Substring(idx + rpcPasswordArg.Length);
+                }
+
+                idx = arg.IndexOf(rpcServerArg, StringComparison.Ordinal);
+                if (idx == 0)
+                {
+                    server = arg.Substring(idx + rpcServerArg.Length);
                 }
             }
 
